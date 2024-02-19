@@ -172,6 +172,8 @@ export function Provider({ children }: React.PropsWithChildren<{}>) {
       > {
         const rToken = !account.refreshJwt ? '' : account.refreshJwt;
         const hasRefreshToken = await refreshToken(rToken);
+        console.info({ hasRefreshToken });
+
         if (hasRefreshToken.error) return undefined;
 
         const now = new Date();

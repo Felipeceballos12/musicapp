@@ -17,3 +17,7 @@ export function parseVolumen<T>(value?: T): number {
 
   return value;
 }
+
+export function convertMsOnM(duration: number): string {
+  return new Date(duration).toISOString().slice(14, 19);
+}

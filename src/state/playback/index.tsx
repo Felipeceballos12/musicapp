@@ -3,6 +3,7 @@ import { Spotify } from '@/view/components/mediaPlayer';
 import { useSession } from '../session';
 import { getCurrentDevice } from '@/lib/api';
 import { save } from '@/lib/storage';
+import { boolean } from 'zod';
 
 const track = {
   name: '',
@@ -12,15 +13,22 @@ const track = {
   artists: [{ name: '' }],
 };
 
+type Track = {
+  info: typeof track;
+  duration: number;
+  position: number;
+};
+
 export type PlaybackState = {
   isReady: boolean;
   player: Spotify.Player | undefined;
-  track: {
-    info: typeof track;
-    duration: number;
-    position: number;
-  };
+  track: Track;
   isPaused: boolean;
+  deviceID: string | undefined;
+};
+
+export type ApiPlaybackContext = {
+  initTrack: (uri: string, device: string) => Promise<boolean>;
 };
 
 const SpotifyContext = React.createContext<PlaybackState>({
@@ -32,6 +40,11 @@ const SpotifyContext = React.createContext<PlaybackState>({
     position: 0,
   },
   isPaused: false,
+  deviceID: undefined,
+});
+
+const ApiSpotifyContext = React.createContext<ApiPlaybackContext>({
+  initTrack: async () => false,
 });
 
 const SPOTIFY_PLAYER_SCRIPT = 'https://sdk.scdn.co/spotify-player.js';
@@ -51,6 +64,7 @@ export function Provider({
       position: 0,
     },
     isPaused: false,
+    deviceID: undefined,
   });
 
   const { currentAccount } = useSession();
@@ -64,6 +78,77 @@ export function Provider({
     },
     [setState]
   );
+
+  const initTrack = React.useCallback<
+    ApiPlaybackContext['initTrack']
+  >(async (uri, device) => {
+    let isPlaying = false;
+
+    try {
+      const getDevices = await fetch(
+        'https://api.spotify.com/v1/me/player/devices',
+        {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (getDevices.status !== 200) {
+        isPlaying = false;
+        return isPlaying;
+      }
+
+      const activeDevices = await getDevices.json();
+
+      if (activeDevices.devices.length <= 0) {
+        isPlaying = false;
+        return isPlaying;
+      }
+
+      const hasDevice = activeDevices.devices.filter(
+        ({ id, is_active }: { id: string; is_active: boolean }) => {
+          return id === device && is_active;
+        }
+      );
+
+      if (hasDevice.length <= 0) {
+        isPlaying = false;
+        return isPlaying;
+      }
+
+      const response = await fetch(
+        `https://api.spotify.com/v1/me/player/play?` +
+          new URLSearchParams({
+            device_id: device,
+          }).toString(),
+        {
+          method: 'PUT',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            uris: [uri],
+          }),
+        }
+      );
+
+      if (response.status !== 202) {
+        isPlaying = false;
+        return isPlaying;
+      }
+
+      isPlaying = true;
+      return isPlaying;
+    } catch (err) {
+      isPlaying = false;
+      return isPlaying;
+    }
+
+    /* https://api.spotify.com/v1/me/player/play?device_id=${device} */
+  }, []);
 
   React.useEffect(() => {
     const script = document.createElement('script');
@@ -106,9 +191,19 @@ export function Provider({
     }: {
       device_id: string;
     }) => {
-      getCurrentDevice(device_id, token).catch((e) =>
-        console.error(e)
-      );
+      getCurrentDevice(device_id, token)
+        .then((response) => {
+          if (response.status !== 204) return;
+        })
+        .catch((e) => console.error(e));
+
+      setState((currentState) => {
+        return {
+          ...currentState,
+          deviceID: device_id,
+        };
+      });
+
       console.log('Ready with Device ID', device_id);
     };
 
@@ -177,37 +272,43 @@ export function Provider({
 
     return () => {
       if (state.player !== undefined) {
-        state.player.removeListener('ready', handleSpotifyReady);
+        state.player.removeListener('ready');
 
-        state.player.removeListener(
-          'not_ready',
-          handleSpotifyNotReady
-        );
+        state.player.removeListener('not_ready');
 
-        state.player.removeListener(
-          'player_state_changed',
-          handleSpotifyStateChanged
-        );
+        state.player.removeListener('player_state_changed');
 
         state.player.disconnect();
       }
     };
   }, [state.player]);
 
-  const value = React.useMemo(
-    () => ({
+  const value = React.useMemo(() => {
+    return {
       ...state,
+    };
+  }, [state]);
+
+  const api = React.useMemo(
+    () => ({
+      initTrack,
     }),
-    [state]
+    [initTrack]
   );
 
   return (
     <SpotifyContext.Provider value={value}>
-      {children}
+      <ApiSpotifyContext.Provider value={api}>
+        {children}
+      </ApiSpotifyContext.Provider>
     </SpotifyContext.Provider>
   );
 }
 
 export function useSpotify() {
   return React.useContext(SpotifyContext);
+}
+
+export function useSpotifyApi() {
+  return React.useContext(ApiSpotifyContext);
 }

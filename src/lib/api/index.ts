@@ -77,11 +77,11 @@ export async function refreshToken(refreshToken: string) {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
     },
-    body: JSON.stringify({
-      client_id: '34bac0dcfa7f49d0a0cf6f8b713af47c',
+    body: new URLSearchParams({
       grant_type: 'refresh_token',
       refresh_token: refreshToken,
-    }),
+      client_id: '34bac0dcfa7f49d0a0cf6f8b713af47c',
+    }).toString(),
   });
 
   return await response.json();
@@ -101,6 +101,7 @@ export async function getCurrentDevice(
       },
       body: JSON.stringify({
         device_ids: [device],
+        play: false,
       }),
     }
   );

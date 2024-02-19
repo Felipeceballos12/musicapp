@@ -2,10 +2,11 @@ import React from 'react';
 import { View } from 'react-native';
 import { RoutesContainer, FlatNavigator } from '../../Navigation';
 import { ErrorBoundary } from '../components/util/ErrorBoundary';
+import { colors } from '@/lib/colors';
 
 function ShellInner() {
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: colors.black }}>
       <FlatNavigator />
     </View>
   );
@@ -13,7 +14,7 @@ function ShellInner() {
 
 export const Shell: React.FC = function () {
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ height: '100%', backgroundColor: colors.black }}>
       <RoutesContainer>
         <ShellInner />
       </RoutesContainer>

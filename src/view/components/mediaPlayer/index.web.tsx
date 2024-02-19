@@ -11,9 +11,11 @@ import { colors } from '@/lib/colors';
 import Slider from '@react-native-community/slider';
 import { useSpotify } from '@/state/playback';
 import { Spotify } from '.';
+import { convertMsOnM } from '@/lib/functions';
 
 export function WebPlayBack() {
   const { player, isPaused, isReady, track } = useSpotify();
+  /*  */
 
   if (!isReady) {
     return (
@@ -49,8 +51,9 @@ export function WebPlayBack() {
             borderTopRightRadius: 50,
           }}
         >
-          <View>
+          <View style={{ flex: 1 }}>
             <Text
+              numberOfLines={1}
               style={{
                 fontSize: 24,
                 fontWeight: '700',
@@ -61,8 +64,9 @@ export function WebPlayBack() {
               {track.info.name}
             </Text>
           </View>
-          <View style={{ marginTop: 4 }}>
+          <View style={{ flex: 1, marginTop: 4 }}>
             <Text
+              numberOfLines={1}
               style={{
                 color: colors.neutral400,
                 fontSize: 16,
@@ -97,7 +101,7 @@ export function WebPlayBack() {
                 borderRadius: 24,
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: colors.darkNeutral250,
+                backgroundColor: colors.darkNeutral100,
               }}
               onPress={() => {
                 player
@@ -108,6 +112,7 @@ export function WebPlayBack() {
               <SkipBack fill="#E8EAF6" color="#E8EAF6" size={28} />
             </PressableWithHover>
             <PressableWithHover
+              //ref={buttonRef}
               onPress={handlePlay}
               style={{
                 width: 70,
@@ -141,7 +146,7 @@ export function WebPlayBack() {
                 borderRadius: 24,
                 alignItems: 'center',
                 justifyContent: 'center',
-                backgroundColor: colors.darkNeutral250,
+                backgroundColor: colors.darkNeutral100,
               }}
               hoverStyle={{}}
               onPress={() =>
@@ -157,7 +162,7 @@ export function WebPlayBack() {
   );
 }
 
-function Seekbar({
+const Seekbar = React.memo(function Seekbar({
   duration,
   position,
   player,
@@ -169,7 +174,8 @@ function Seekbar({
   player: Spotify.Player | undefined;
   isPaused: boolean;
 }) {
-  const [seek, setSeek] = React.useState(0);
+  const [isActive, setIsActive] = React.useState<boolean>(false);
+  const [seek, setSeek] = React.useState<number>(position);
 
   React.useEffect(() => {
     setSeek(position);
@@ -178,12 +184,14 @@ function Seekbar({
   React.useEffect(() => {
     if (isPaused) return;
 
-    const interval = setInterval(() => {
-      setSeek((currentSeek) => currentSeek + 1000);
-    }, 1000); // Update every second
+    if (!isActive) {
+      const interval = setInterval(() => {
+        setSeek((currentSeek) => currentSeek + 1000);
+      }, 1000); // Update every second
 
-    return () => clearInterval(interval); // Clear interval on unmount
-  }, [seek, isPaused]);
+      return () => clearInterval(interval); // Clear interval on unmount
+    }
+  }, [seek, isPaused, isActive]);
 
   return (
     <>
@@ -191,16 +199,20 @@ function Seekbar({
         value={seek}
         style={{
           width: '100%',
-          height: 4,
-          pointerEvents: 'box-only',
+          height: 12,
         }}
         minimumValue={0}
+        onValueChange={(position) => setSeek(position)}
         maximumValue={duration}
         thumbTintColor={colors.neutral200}
         minimumTrackTintColor={colors.green400}
         maximumTrackTintColor={colors.neutral600}
+        onSlidingStart={() => setIsActive(true)}
         onSlidingComplete={(number) => {
-          player?.seek(number).then(() => setSeek(number));
+          player?.seek(number).then(() => {
+            setIsActive(false);
+            setSeek(number);
+          });
         }}
         {...rest}
       />
@@ -218,7 +230,7 @@ function Seekbar({
             color: colors.neutral200,
           }}
         >
-          {new Date(seek).toISOString().slice(14, 19)}
+          {convertMsOnM(seek)}
         </Text>
         <Text
           style={{
@@ -227,12 +239,12 @@ function Seekbar({
             color: colors.neutral200,
           }}
         >
-          {new Date(duration).toISOString().slice(14, 19)}
+          {convertMsOnM(duration)}
         </Text>
       </View>
     </>
   );
-}
+});
 
 const styles = StyleSheet.create({
   container: {

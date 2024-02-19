@@ -33,6 +33,7 @@ export const Login = ({
         'user-library-modify',
         'user-read-playback-state',
         'user-modify-playback-state',
+        'user-read-currently-playing',
       ],
       usePKCE: true,
       redirectUri: makeRedirectUri({
@@ -75,7 +76,7 @@ export const Login = ({
           promptAsync();
         }}
       >
-        <Text>Login Home</Text>
+        <Text style={{ color: 'white' }}>Login Home</Text>
       </Pressable>
     </View>
   );

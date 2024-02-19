@@ -3,9 +3,9 @@ import { StyleSheet } from 'react-native';
 
 export const styles = StyleSheet.create({
   bottomBar: {
+    position: 'absolute',
     maxWidth: 500,
     width: '100%',
-    position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
@@ -20,9 +20,13 @@ export const styles = StyleSheet.create({
     paddingHorizontal: 15,
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
+  bottomBarWeb: {
+    // @ts-ignore web-only
+    position: 'fixed',
+  },
   ctrl: {
     flex: 1,
-    paddingTop: 13,
+    paddingTop: 15,
     paddingBottom: 4,
   },
   ctrlIcon: {

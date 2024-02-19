@@ -23,6 +23,7 @@ import { router } from './routes';
 import { isNative } from './platform/detection';
 import { buildStateObject } from './lib/routes/helpers';
 import { createNativeStackNavigatorWithAuth } from './view/shell/createNativeStackNavigatorWithAuth';
+import { colors } from './lib/colors';
 
 const navigationRef =
   createNavigationContainerRef<AllNavigatorParams>();
@@ -66,6 +67,7 @@ const FlatNavigator = () => {
         fullScreenGestureEnabled: true,
         headerShown: false,
         animationDuration: 250,
+        contentStyle: { backgroundColor: colors.black },
       }}
     >
       <Flat.Screen
