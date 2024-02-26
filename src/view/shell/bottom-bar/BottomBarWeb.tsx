@@ -1,144 +1,171 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useSession } from '../../../state/session';
-import { useNavigationState } from '@react-navigation/native';
+import {
+  useNavigationState,
+  useNavigation,
+  StackActions,
+} from '@react-navigation/native';
 import { getCurrentRoute, isTab } from '../../../lib/routes/helpers';
 import { Link } from '../../components/util/Link';
 import { styles } from './BottomBarStyle';
 import Animated from 'react-native-reanimated';
-import {
-  Home,
-  Search,
-  Music,
-  Library,
-  User,
-} from 'lucide-react-native';
+import { Library } from 'lucide-react-native';
 import { clamp } from '../../../lib/numbers';
 import { colors } from '@/lib/colors';
+import { NavigationProp } from '@/lib/routes/types';
+import {
+  HomeIcon,
+  HomeIconSolid,
+  MusicIcon,
+  MusicIconSolid,
+  SearchIcon,
+  SearchIconSolid,
+  UserIcon,
+  UserIconSolid,
+} from '@/lib/icons';
+import { useSpotify } from '@/state/playback';
+import LinearGradient from 'react-native-linear-gradient';
+import { useImageColorPallete } from '@/lib/hooks/useImageColorPallete';
+import { Image } from 'expo-image';
+import {
+  TogglePLay,
+  TrackArtist,
+  TrackName,
+} from '@/view/components/mediaPlayer/index.web';
+import { PressableWithHover } from '@/view/components/util/PressableWithHover';
 
-export function BottomBarWeb() {
+function InnerBottomBarWeb() {
   const { hasSession, currentAccount } = useSession();
   const safeAreInsets = useSafeAreaInsets();
+
   return (
-    <Animated.View
+    <View
       style={[
-        styles.bottomBar,
-        styles.bottomBarWeb,
+        styles.menuBar,
         { paddingBottom: clamp(safeAreInsets.bottom, 15, 30) },
       ]}
     >
+      <NavItem routeName="Home" href="/">
+        {({ isActive }) => {
+          const Icon = isActive ? (
+            <HomeIconSolid
+              color={colors.neutral200}
+              size={27}
+              style={[styles.ctrlIcon, styles.homeIcon]}
+            />
+          ) : (
+            <HomeIcon
+              color="rgba(179, 185, 196, 0.8)"
+              style={[styles.ctrlIcon, styles.homeIcon]}
+            />
+          );
+
+          return <>{Icon}</>;
+        }}
+      </NavItem>
+      <NavItem routeName="Search" href="/search">
+        {({ isActive }) => {
+          const Icon = isActive ? (
+            <SearchIconSolid
+              color={colors.neutral200}
+              circleColor="transparent"
+              size={27}
+              style={[styles.ctrlIcon, styles.homeIcon]}
+            />
+          ) : (
+            <SearchIcon
+              color="rgba(179, 185, 196, 0.8)"
+              style={[styles.ctrlIcon, styles.homeIcon]}
+            />
+          );
+
+          return <>{Icon}</>;
+        }}
+      </NavItem>
+      {hasSession && (
+        <>
+          {/* <NavItem routeName="MyMusic" href="/mymusic">
+            {({ isActive }) => {
+              const Icon = isActive ? (
+                <MusicIconSolid
+                  color={colors.neutral200}
+                  size={27}
+                  style={[styles.ctrlIcon, styles.homeIcon]}
+                />
+              ) : (
+                <MusicIcon
+                  color="rgba(179, 185, 196, 0.8)"
+                  style={[styles.ctrlIcon, styles.homeIcon]}
+                />
+              );
+
+              return <>{Icon}</>;
+            }}
+          </NavItem> */}
+          <NavItem routeName="Library" href="/library">
+            {({ isActive }) => {
+              const Icon = isActive ? (
+                <Library
+                  color={colors.neutral200}
+                  size={27}
+                  style={[styles.ctrlIcon, styles.homeIcon]}
+                />
+              ) : (
+                <Library
+                  color="rgba(179, 185, 196, 0.8)"
+                  size={24}
+                  style={[styles.ctrlIcon, styles.homeIcon]}
+                />
+              );
+
+              return <>{Icon}</>;
+            }}
+          </NavItem>
+          <NavItem
+            routeName="Profile"
+            href={currentAccount ? `/profile/felipeCeballos` : '/'}
+          >
+            {({ isActive }) => {
+              const Icon = isActive ? (
+                <UserIconSolid
+                  color={colors.neutral200}
+                  size={27}
+                  style={[styles.ctrlIcon, styles.homeIcon]}
+                />
+              ) : (
+                <UserIcon
+                  color="rgba(179, 185, 196, 0.8)"
+                  style={[styles.ctrlIcon, styles.homeIcon]}
+                />
+              );
+
+              return <>{Icon}</>;
+            }}
+          </NavItem>
+        </>
+      )}
+    </View>
+  );
+}
+
+export function BottomBarWeb() {
+  const { hasSession } = useSession();
+  const currentRoute = useNavigationState((state) => {
+    if (!state) {
+      return { name: 'Home' };
+    }
+
+    return getCurrentRoute(state);
+  });
+
+  return (
+    <Animated.View style={[styles.bottomBar, styles.bottomBarWeb]}>
       {hasSession ? (
         <>
-          <NavItem routeName="Home" href="/">
-            {({ isActive }) => {
-              const Icon = isActive ? (
-                <Home
-                  strokeWidth={2}
-                  color={colors.green400}
-                  size={27}
-                  style={[styles.ctrlIcon, styles.homeIcon]}
-                />
-              ) : (
-                <Home
-                  color={colors.neutral200}
-                  size={24}
-                  style={[styles.ctrlIcon, styles.homeIcon]}
-                />
-              );
-
-              return <>{Icon}</>;
-            }}
-          </NavItem>
-          <NavItem routeName="Search" href="/search">
-            {({ isActive }) => {
-              const Icon = isActive ? (
-                <Search
-                  strokeWidth={2}
-                  color={colors.green400}
-                  size={27}
-                  style={[styles.ctrlIcon, styles.homeIcon]}
-                />
-              ) : (
-                <Search
-                  color={colors.neutral200}
-                  size={24}
-                  style={[styles.ctrlIcon, styles.homeIcon]}
-                />
-              );
-
-              return <>{Icon}</>;
-            }}
-          </NavItem>
-          {hasSession && (
-            <>
-              <NavItem routeName="MyMusic" href="/mymusic">
-                {({ isActive }) => {
-                  const Icon = isActive ? (
-                    <Music
-                      strokeWidth={2}
-                      color={colors.green400}
-                      size={27}
-                      style={[styles.ctrlIcon, styles.homeIcon]}
-                    />
-                  ) : (
-                    <Music
-                      color={colors.neutral200}
-                      size={24}
-                      style={[styles.ctrlIcon, styles.homeIcon]}
-                    />
-                  );
-
-                  return <>{Icon}</>;
-                }}
-              </NavItem>
-              <NavItem routeName="Library" href="/library">
-                {({ isActive }) => {
-                  const Icon = isActive ? (
-                    <Library
-                      strokeWidth={2}
-                      color={colors.green400}
-                      size={27}
-                      style={[styles.ctrlIcon, styles.homeIcon]}
-                    />
-                  ) : (
-                    <Library
-                      color={colors.neutral200}
-                      size={24}
-                      style={[styles.ctrlIcon, styles.homeIcon]}
-                    />
-                  );
-
-                  return <>{Icon}</>;
-                }}
-              </NavItem>
-              <NavItem
-                routeName="Profile"
-                href={
-                  currentAccount ? `/profile/felipeCeballos` : '/'
-                }
-              >
-                {({ isActive }) => {
-                  const Icon = isActive ? (
-                    <User
-                      strokeWidth={2}
-                      color={colors.green400}
-                      size={27}
-                      style={[styles.ctrlIcon, styles.homeIcon]}
-                    />
-                  ) : (
-                    <User
-                      color={colors.neutral200}
-                      size={24}
-                      style={[styles.ctrlIcon, styles.homeIcon]}
-                    />
-                  );
-
-                  return <>{Icon}</>;
-                }}
-              </NavItem>
-            </>
-          )}
+          {currentRoute.name !== 'MyMusic' && <MiniWebPlayer />}
+          <InnerBottomBarWeb />
         </>
       ) : (
         <>
@@ -187,3 +214,86 @@ const NavItem: React.FC<{
     </Link>
   );
 };
+
+function MiniWebPlayer() {
+  const { track } = useSpotify();
+
+  if (!track.info.uri) {
+    return (
+      <View
+        style={{
+          maxWidth: 400,
+          width: '100%',
+          alignSelf: 'center',
+          borderTopRightRadius: 8,
+          borderTopLeftRadius: 8,
+          height: 86,
+          backgroundColor: 'rgba(255,255,255,0.11)',
+        }}
+      ></View>
+    );
+  }
+
+  return (
+    <MiniWebPlayerContainer url={track.info.album.images[2].url}>
+      <View
+        style={{
+          flex: 1,
+          flexDirection: 'row',
+          gap: 12,
+          alignItems: 'center',
+        }}
+      >
+        <Image
+          source={{ uri: track.info.album.images[0].url }}
+          alt=""
+          style={{ width: 60, height: 60, borderRadius: 5 }}
+          contentFit="cover"
+          transition={250}
+        />
+        <View style={{ flex: 1 }}>
+          <TrackName fontSize={16} fontWeight="400" />
+          <TrackArtist
+            fontSize={14}
+            fontWeight="400"
+            color={colors.neutral400}
+          />
+        </View>
+      </View>
+
+      <TogglePLay
+        btnSize={60}
+        iconSize={24}
+        color={colors.neutral300}
+      />
+    </MiniWebPlayerContainer>
+  );
+}
+
+function MiniWebPlayerContainer({
+  children,
+  url,
+}: {
+  children: React.ReactNode;
+  url: string;
+}) {
+  const [colours] = useImageColorPallete(url);
+  const navigation = useNavigation<NavigationProp>();
+
+  return (
+    <PressableWithHover
+      hoverStyle={{}}
+      style={styles.miniWebPlayerBtn}
+      onPress={() =>
+        navigation.dispatch(StackActions.push('MyMusic'))
+      }
+    >
+      <LinearGradient
+        colors={[colours[2], 'rgba(0,0,0,0.8)']}
+        style={styles.miniWebPlayerContainer}
+      >
+        <View style={styles.miniWebPlayerWrapper}>{children}</View>
+      </LinearGradient>
+    </PressableWithHover>
+  );
+}

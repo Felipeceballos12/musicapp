@@ -8,7 +8,6 @@ module.exports = function (api) {
         'module-resolver',
         {
           alias: {
-            '^react-native$': 'react-native-web',
             // This needs to be mirrored in tsconfig.json
             '@': './src',
             lib: './src/lib',

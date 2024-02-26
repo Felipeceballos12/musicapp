@@ -5,6 +5,7 @@ import {
   StackActions,
 } from '@react-navigation/native';
 import { NavigationProp } from 'lib/routes/types';
+import { colors } from '@/lib/colors';
 
 export function NotFoundScreen() {
   const navigation = useNavigation<NavigationProp>();
@@ -24,14 +25,28 @@ export function NotFoundScreen() {
   return (
     <View testID="notFoundView" style={{ flex: 1 }}>
       <View style={styles.container}>
-        <Text style={{ marginBottom: 10, fontSize: 24 }}>
+        <Text
+          style={{
+            marginBottom: 10,
+            fontSize: 24,
+            color: colors.neutral100,
+          }}
+        >
           Page not found
         </Text>
-        <Text style={{ marginBottom: 10, fontSize: 18 }}>
+        <Text
+          style={{
+            marginBottom: 10,
+            fontSize: 18,
+            color: colors.neutral100,
+          }}
+        >
           We're sorry! We can't find the page you were looking for.
         </Text>
         <Pressable onPress={onPressHome}>
-          <Text>{canGoBack ? 'Go back' : 'Go home'}</Text>
+          <Text style={{ color: colors.neutral100 }}>
+            {canGoBack ? 'Go back' : 'Go home'}
+          </Text>
         </Pressable>
       </View>
     </View>

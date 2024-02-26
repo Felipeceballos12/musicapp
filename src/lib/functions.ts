@@ -21,3 +21,11 @@ export function parseVolumen<T>(value?: T): number {
 export function convertMsOnM(duration: number): string {
   return new Date(duration).toISOString().slice(14, 19);
 }
+
+export function changeRepeatMode(number: number) {
+  return (number + 1) % 3;
+}
+
+export function getIDFromURI(str: string) {
+  return str.slice(str.lastIndexOf(':') + 1);
+}

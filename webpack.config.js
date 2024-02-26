@@ -7,6 +7,8 @@ module.exports = async function (env, argv) {
   config = withAlias(config, {
     'react-native$': 'react-native-web',
     'react-native-webview': 'react-native-web-webview',
+    'react-native-linear-gradient':
+      'react-native-web-linear-gradient',
   });
 
   // Use the React refresh plugin in development mode

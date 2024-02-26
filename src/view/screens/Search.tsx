@@ -3,7 +3,6 @@ import {
   View,
   Pressable,
   TextInput,
-  KeyboardAvoidingView,
   ActivityIndicator,
   ScrollView,
   Text,
@@ -23,7 +22,7 @@ import {
   StackActions,
 } from '@react-navigation/native';
 import { NavigationProp } from '@/lib/routes/types';
-import { convertMsOnM } from '@/lib/functions';
+import { convertMsOnM, getIDFromURI } from '@/lib/functions';
 
 type MusicContent = {
   uri: string;
@@ -81,7 +80,7 @@ export function SearchScreen() {
     NodeJS.Timeout | undefined
   >(undefined);
   const { currentAccount } = useSession();
-  const { deviceID, player } = useSpotify();
+  const { deviceID } = useSpotify();
   const token = currentAccount?.accessJwt
     ? currentAccount.accessJwt
     : '';
@@ -250,10 +249,11 @@ export function SearchScreen() {
                           artists={artists}
                           duration_ms={duration_ms}
                           explicit={explicit}
+                          id={id}
                         />
                       )
                     )}
-                    <View style={{ height: 80 }} />
+                    <View style={{ height: 200 }} />
                   </>
                 ) : (
                   <View
@@ -295,6 +295,7 @@ export function SearchScreen() {
                 maxWidth: 500,
                 width: '100%',
                 alignSelf: 'center',
+                backgroundColor: colors.black,
               },
             ]}
             // @ts-ignore web only -prf
@@ -305,6 +306,7 @@ export function SearchScreen() {
                 flex: 1,
                 flexDirection: 'row',
                 flexWrap: 'wrap',
+                justifyContent: 'center',
                 gap: 16,
               }}
             >
@@ -323,7 +325,6 @@ export function SearchScreen() {
                 >
                   <Text
                     style={{
-                      color: colors.neutral200,
                       fontSize: 18,
                       fontWeight: '700',
                       textTransform: 'uppercase',
@@ -334,6 +335,7 @@ export function SearchScreen() {
                 </Pressable>
               ))}
             </View>
+            <View style={{ height: 200 }} />
           </View>
         )}
       </>
@@ -370,22 +372,41 @@ function SearchMusicCard({
   artists,
   duration_ms,
 }: SearchMusicProps) {
-  const { initTrack } = useSpotifyApi();
+  const { track, player } = useSpotify();
+  const { initTrack, recommendations } = useSpotifyApi();
   const navigation = useNavigation<NavigationProp>();
 
   const handlePlayingTrack = React.useCallback(
-    (uri: string, device: string | undefined) => {
+    async (uri: string, device: string | undefined) => {
+      if (uri === track.info.uri) {
+        try {
+          await player?.togglePlay();
+          return;
+        } catch (error) {
+          console.error(error);
+        }
+        return;
+      }
+
       if (device === undefined) return;
 
-      initTrack(uri, device)
-        .then((response) => {
-          if (!response) return;
+      try {
+        const response = await initTrack(uri, device);
+        if (!response) return;
 
-          navigation.dispatch(StackActions.push('Home'));
-        })
-        .catch((e) => console.error(e));
+        const artistID = getIDFromURI(track.info.artists[0].uri);
+        const trackID = getIDFromURI(track.info.uri);
+
+        const nextTracks = await recommendations(trackID, artistID);
+
+        if (nextTracks === undefined) return;
+
+        //navigation.dispatch(StackActions.push('Home'));
+      } catch (err) {
+        console.error(err);
+      }
     },
-    []
+    [track.info.uri]
   );
 
   if (device === undefined) return;
@@ -434,8 +455,12 @@ function SearchMusicCard({
           <Text
             numberOfLines={1}
             style={{
-              color: colors.neutral0,
+              color:
+                track.info.uri === uri
+                  ? colors.lime400
+                  : colors.neutral0,
               fontSize: 16,
+              fontWeight: track.info.uri === uri ? '600' : '400',
             }}
           >
             {name}

@@ -24,6 +24,8 @@ import { isNative } from './platform/detection';
 import { buildStateObject } from './lib/routes/helpers';
 import { createNativeStackNavigatorWithAuth } from './view/shell/createNativeStackNavigatorWithAuth';
 import { colors } from './lib/colors';
+import { useSpotify } from './state/playback';
+import { heading } from './lib/strings/heading';
 
 const navigationRef =
   createNavigationContainerRef<AllNavigatorParams>();
@@ -60,6 +62,9 @@ const commonScreens = (Stack: typeof HomeTab) => {
  */
 
 const FlatNavigator = () => {
+  const { track, isPaused } = useSpotify();
+  const { info } = track;
+
   return (
     <Flat.Navigator
       screenOptions={{
@@ -73,22 +78,34 @@ const FlatNavigator = () => {
       <Flat.Screen
         name="Home"
         component={HomeScreen}
-        options={{ requireAuth: true }}
+        options={{
+          title: heading('Home', isPaused, info),
+          requireAuth: true,
+        }}
       />
       <Flat.Screen
         name="Search"
         component={SearchScreen}
-        options={{ requireAuth: true }}
+        options={{
+          title: heading('Search', isPaused, info),
+          requireAuth: true,
+        }}
       />
       <Flat.Screen
         name="MyMusic"
         component={MusicScreen}
-        options={{ requireAuth: true }}
+        options={{
+          title: heading('MyMusic', isPaused, info),
+          requireAuth: true,
+        }}
       />
       <Flat.Screen
         name="Library"
         component={LibraryScreen}
-        options={{ requireAuth: true }}
+        options={{
+          title: heading('Library', isPaused, info),
+          requireAuth: true,
+        }}
       />
       {commonScreens(Flat as typeof HomeTab)}
     </Flat.Navigator>

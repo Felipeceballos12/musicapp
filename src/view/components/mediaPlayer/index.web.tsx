@@ -1,26 +1,36 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
+import React, { ReactNode } from 'react';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { PressableWithHover } from '../util/PressableWithHover';
 import {
   Play,
   Pause,
   SkipForward,
   SkipBack,
+  Repeat,
+  Shuffle,
+  Repeat1,
+  Repeat2,
 } from 'lucide-react-native';
 import { colors } from '@/lib/colors';
 import Slider from '@react-native-community/slider';
-import { useSpotify } from '@/state/playback';
-import { Spotify } from '.';
+import { useSpotify, useSpotifyApi } from '@/state/playback';
 import { convertMsOnM } from '@/lib/functions';
+import Container from './container';
+import { Image } from 'expo-image';
+import { useKeyDown } from '@/lib/hooks/useKeyDown';
 
 export function WebPlayBack() {
-  const { player, isPaused, isReady, track } = useSpotify();
-  /*  */
+  const { isReady, track } = useSpotify();
 
   if (!isReady) {
     return (
       <View style={styles.container}>
-        <View style={styles.mainWrapper}>
+        <View
+          style={[
+            styles.mainWrapper,
+            { backgroundColor: colors.black },
+          ]}
+        >
           <Text style={{ color: colors.neutral200 }}>
             Loading....
           </Text>
@@ -29,157 +39,29 @@ export function WebPlayBack() {
     );
   }
 
-  const handlePlay = async () => {
-    await player?.togglePlay();
-  };
-
   return (
     <View style={styles.container}>
-      <View style={styles.mainWrapper}>
-        <Image
-          source={{ uri: track.info.album.images[0].url }}
-          alt=""
-          style={styles.nowPlayingCover}
-          resizeMethod="resize"
-        />
-        <View
-          style={{
-            maxWidth: 355,
-            width: '100%',
-            marginTop: 32,
-            borderTopLeftRadius: 50,
-            borderTopRightRadius: 50,
-          }}
-        >
-          <View style={{ flex: 1 }}>
-            <Text
-              numberOfLines={1}
-              style={{
-                fontSize: 24,
-                fontWeight: '700',
-                textTransform: 'capitalize',
-                color: colors.neutral200,
-              }}
-            >
-              {track.info.name}
-            </Text>
-          </View>
-          <View style={{ flex: 1, marginTop: 4 }}>
-            <Text
-              numberOfLines={1}
-              style={{
-                color: colors.neutral400,
-                fontSize: 16,
-                fontWeight: '600',
-              }}
-            >
-              {track.info.artists[0].name}
-            </Text>
-          </View>
+      <Container url={track.info.album.images[2].url}>
+        <WebPlayerContent>
           <View style={{ marginTop: 17 }}>
-            <Seekbar
-              player={player}
-              duration={track.duration}
-              position={track.position}
-              isPaused={isPaused}
-            />
+            <Seekbar />
           </View>
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 25,
-              marginTop: 16,
-            }}
-          >
-            <PressableWithHover
-              hoverStyle={{}}
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 24,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: colors.darkNeutral100,
-              }}
-              onPress={() => {
-                player
-                  ?.previousTrack()
-                  .then(() => console.log('Back'));
-              }}
-            >
-              <SkipBack fill="#E8EAF6" color="#E8EAF6" size={28} />
-            </PressableWithHover>
-            <PressableWithHover
-              //ref={buttonRef}
-              onPress={handlePlay}
-              style={{
-                width: 70,
-                height: 70,
-                alignItems: 'center',
-                justifyContent: 'center',
-                borderRadius: 50,
-                backgroundColor: colors.neutral200,
-              }}
-              hoverStyle={{}}
-            >
-              {isPaused ? (
-                <Play
-                  fill={colors.black}
-                  color={colors.black}
-                  size={24}
-                  style={{ marginLeft: 4 }}
-                />
-              ) : (
-                <Pause
-                  fill={colors.black}
-                  color={colors.black}
-                  size={24}
-                />
-              )}
-            </PressableWithHover>
-            <PressableWithHover
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 24,
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: colors.darkNeutral100,
-              }}
-              hoverStyle={{}}
-              onPress={() =>
-                player?.nextTrack().then(() => console.log('Next'))
-              }
-            >
-              <SkipForward fill="#E8EAF6" color="#E8EAF6" size={28} />
-            </PressableWithHover>
-          </View>
-        </View>
-      </View>
+          <PlaybackControls />
+        </WebPlayerContent>
+      </Container>
     </View>
   );
 }
 
-const Seekbar = React.memo(function Seekbar({
-  duration,
-  position,
-  player,
-  isPaused,
-  ...rest
-}: {
-  duration: number;
-  position: number;
-  player: Spotify.Player | undefined;
-  isPaused: boolean;
-}) {
+function Seekbar() {
+  const { player, isPaused, track } = useSpotify();
+
   const [isActive, setIsActive] = React.useState<boolean>(false);
-  const [seek, setSeek] = React.useState<number>(position);
+  const [seek, setSeek] = React.useState<number>(track.position);
 
   React.useEffect(() => {
-    setSeek(position);
-  }, [position]);
+    setSeek(track.position);
+  }, [track.position]);
 
   React.useEffect(() => {
     if (isPaused) return;
@@ -203,10 +85,10 @@ const Seekbar = React.memo(function Seekbar({
         }}
         minimumValue={0}
         onValueChange={(position) => setSeek(position)}
-        maximumValue={duration}
+        maximumValue={track.duration}
         thumbTintColor={colors.neutral200}
-        minimumTrackTintColor={colors.green400}
-        maximumTrackTintColor={colors.neutral600}
+        minimumTrackTintColor={colors.neutral200}
+        maximumTrackTintColor="rgba(179, 185, 196, 0.8)"
         onSlidingStart={() => setIsActive(true)}
         onSlidingComplete={(number) => {
           player?.seek(number).then(() => {
@@ -214,7 +96,6 @@ const Seekbar = React.memo(function Seekbar({
             setSeek(number);
           });
         }}
-        {...rest}
       />
       <View
         style={{
@@ -239,12 +120,260 @@ const Seekbar = React.memo(function Seekbar({
             color: colors.neutral200,
           }}
         >
-          {convertMsOnM(duration)}
+          {convertMsOnM(track.duration)}
         </Text>
       </View>
     </>
   );
-});
+}
+
+function WebPlayerContent({ children }: { children: ReactNode }) {
+  const { track } = useSpotify();
+  return (
+    <>
+      <Image
+        source={{ uri: track.info.album.images[2].url }}
+        alt=""
+        style={styles.nowPlayingCover}
+        contentFit="cover"
+        transition={300}
+      />
+      <View
+        style={{
+          maxWidth: 355,
+          width: '100%',
+          marginTop: 32,
+          borderTopLeftRadius: 50,
+          borderTopRightRadius: 50,
+        }}
+      >
+        <TrackName />
+        <TrackArtist />
+        {children}
+      </View>
+    </>
+  );
+}
+
+export function TrackName({
+  fontSize = 24,
+  fontWeight = '700',
+  color = colors.neutral100,
+}: {
+  fontSize?: number;
+  fontWeight?:
+    | '100'
+    | '200'
+    | '300'
+    | '400'
+    | '500'
+    | '600'
+    | '700'
+    | '800'
+    | '900';
+  color?: string;
+}) {
+  const { track } = useSpotify();
+
+  return (
+    <View style={{ overflow: 'hidden' }}>
+      <Text
+        style={{
+          fontSize: fontSize,
+          fontWeight: fontWeight,
+          textTransform: 'capitalize',
+          color: color,
+        }}
+      >
+        <Text numberOfLines={1}>{track.info.name}</Text>
+      </Text>
+    </View>
+  );
+}
+
+export function TrackArtist({
+  fontSize = 16,
+  fontWeight = '600',
+  color = 'rgba(179, 185, 196, 0.8)',
+}: {
+  fontSize?: number;
+  fontWeight?:
+    | '100'
+    | '200'
+    | '300'
+    | '400'
+    | '500'
+    | '600'
+    | '700'
+    | '800'
+    | '900';
+  color?: string;
+}) {
+  const { track } = useSpotify();
+
+  return (
+    <View style={{ flex: 1, marginTop: 4 }}>
+      <Text
+        style={{
+          //color: colors.neutral400,
+          color: color,
+          fontSize: fontSize,
+          fontWeight: fontWeight,
+        }}
+      >
+        {track.info.artists[0].name}
+      </Text>
+    </View>
+  );
+}
+
+function PlaybackControls() {
+  const { player, isPaused, track, deviceID } = useSpotify();
+  const { shuffleSpotify, repeatMode } = useSpotifyApi();
+  const device = deviceID ? deviceID : '';
+
+  const handleShuffle = async (
+    currentDevice: string,
+    isShuffle: boolean
+  ) => {
+    await shuffleSpotify(currentDevice, isShuffle);
+  };
+
+  const handleRepeatMode = async (
+    currentRepeatMode: number,
+    currentDevice: string
+  ) => {
+    await repeatMode(currentRepeatMode, currentDevice);
+  };
+
+  return (
+    <View
+      style={{
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 25,
+        marginTop: 16,
+      }}
+    >
+      <Pressable
+        onPress={() => {
+          handleShuffle(device, track.shuffle).then(() =>
+            console.info('Shuffle')
+          );
+        }}
+      >
+        <Shuffle
+          color={
+            track.shuffle ? '#E8EAF6' : 'rgba(179, 185, 196, 0.8)'
+          }
+          size={24}
+        />
+      </Pressable>
+      <PressableWithHover
+        hoverStyle={{}}
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: 24,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+        onPress={() => {
+          player?.previousTrack().then(() => console.log('Back'));
+        }}
+      >
+        <SkipBack
+          fill="rgba(179, 185, 196, 0.8)"
+          color="rgba(179, 185, 196, 0.8)"
+          size={28}
+        />
+      </PressableWithHover>
+
+      <TogglePLay />
+
+      <PressableWithHover
+        style={{
+          width: 44,
+          height: 44,
+          borderRadius: 24,
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+        hoverStyle={{}}
+        onPress={() =>
+          player?.nextTrack().then(() => console.log('Next'))
+        }
+      >
+        <SkipForward
+          fill="rgba(179, 185, 196, 0.9)"
+          color="rgba(179, 185, 196, 0.8)"
+          size={28}
+        />
+      </PressableWithHover>
+
+      <Pressable
+        onPress={() => handleRepeatMode(track.repeatMode, device)}
+      >
+        {track.repeatMode === 0 ? (
+          <Repeat color="rgba(179, 185, 196, 0.8)" size={24} />
+        ) : track.repeatMode === 1 ? (
+          <Repeat2 color="#E8EAF6" size={24} />
+        ) : (
+          <Repeat1 color="#E8EAF6" size={24} />
+        )}
+      </Pressable>
+    </View>
+  );
+}
+
+export function TogglePLay({
+  btnSize = 70,
+  iconSize = 32,
+  btnRadius = 50,
+  color = '#E8EAF6',
+}: {
+  btnSize?: number;
+  iconSize?: number;
+  btnRadius?: number;
+  color?: string;
+}) {
+  const { player, isPaused } = useSpotify();
+
+  useKeyDown('Space', handlePlay);
+
+  async function handlePlay() {
+    await player?.togglePlay();
+  }
+  return (
+    <PressableWithHover
+      //ref={buttonRef}
+      onPress={handlePlay}
+      style={{
+        width: btnSize,
+        height: btnSize,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: btnRadius,
+        //backgroundColor: colors.neutral200,
+      }}
+      hoverStyle={{
+        backgroundColor: 'rgba( 232, 234, 246, 0.2)',
+      }}
+    >
+      {isPaused ? (
+        <Play
+          fill={color}
+          color={color}
+          size={iconSize}
+          style={{ marginLeft: 4 }}
+        />
+      ) : (
+        <Pause fill={color} color={color} size={iconSize} />
+      )}
+    </PressableWithHover>
+  );
+}
 
 const styles = StyleSheet.create({
   container: {
@@ -252,21 +381,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   mainWrapper: {
-    maxWidth: 416,
-    width: '100%',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingtop: 45,
     marginHorizontal: 0,
     marginVertical: 'auto',
-    backgroundColor: colors.black,
-    paddingVertical: 45,
-    paddingHorizontal: 16,
-    borderRadius: 40,
   },
   nowPlayingCover: {
-    borderRadius: 8,
-    marginRight: 10,
+    alignSelf: 'center',
+    borderRadius: 5,
     textAlign: 'right',
     width: 355,
     height: 355,
