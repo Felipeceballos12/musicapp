@@ -5,7 +5,7 @@ module.exports = function () {
     scheme: 'musicapp',
     version: '1.0.0',
     orientation: 'portrait',
-    icon: './assets/icon.png',
+    icon: './assets/musicapp.svg',
     userInterfaceStyle: 'automatic',
     experiments: {
       tsconfigPaths: true,
@@ -26,7 +26,7 @@ module.exports = function () {
       },
     },
     web: {
-      favicon: './assets/favicon.png',
+      favicon: './assets/musicapp.png',
     },
     plugins: ['expo-localization'],
   };
