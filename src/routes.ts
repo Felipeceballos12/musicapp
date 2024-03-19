@@ -5,5 +5,4 @@ export const router = new Router({
   Search: '/search',
   MyMusic: '/mymusic',
   Library: '/library',
-  Profile: '/profile/:name',
 });

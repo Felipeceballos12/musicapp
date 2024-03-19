@@ -25,7 +25,7 @@ const InnerApp = () => {
   if (isInitialLoad) return null;
 
   return (
-    <React.Fragment key={currentAccount?.codeVerifier}>
+    <React.Fragment>
       <SpotifyProvider>
         <SafeAreaProvider>
           <Shell />

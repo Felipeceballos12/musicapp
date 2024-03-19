@@ -46,6 +46,7 @@ export type ApiPlaybackContext = {
     trackID: string,
     artistID: string
   ) => Promise<typeof track | undefined>;
+  addTotheQueue: (uri: string, deviceID: string) => Promise<void>;
 };
 
 const SpotifyContext = React.createContext<PlaybackState>({
@@ -67,6 +68,7 @@ const ApiSpotifyContext = React.createContext<ApiPlaybackContext>({
   shuffleSpotify: async () => {},
   repeatMode: async () => {},
   recommendations: async () => track,
+  addTotheQueue: async () => {},
 });
 
 const SPOTIFY_PLAYER_SCRIPT = 'https://sdk.scdn.co/spotify-player.js';
@@ -240,6 +242,26 @@ export function Provider({
     }
   }, []);
 
+  const addTotheQueue = React.useCallback<
+    ApiPlaybackContext['addTotheQueue']
+  >(async (uri, device) => {
+    try {
+      const response = await fetch(
+        `https://api.spotify.com/v1/me/player/queue?uri=${uri}&device_id=${device}`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      console.info({ response });
+    } catch (error) {
+      console.error(error);
+    }
+  }, []);
+
   React.useEffect(() => {
     const script = document.createElement('script');
     script.src = SPOTIFY_PLAYER_SCRIPT;
@@ -388,8 +410,15 @@ export function Provider({
       shuffleSpotify,
       repeatMode,
       recommendations,
+      addTotheQueue,
     }),
-    [initTrack, shuffleSpotify, repeatMode, recommendations]
+    [
+      initTrack,
+      shuffleSpotify,
+      repeatMode,
+      recommendations,
+      addTotheQueue,
+    ]
   );
 
   return (

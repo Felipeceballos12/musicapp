@@ -22,19 +22,19 @@ import {
   MusicIconSolid,
   SearchIcon,
   SearchIconSolid,
-  UserIcon,
-  UserIconSolid,
 } from '@/lib/icons';
 import { useSpotify } from '@/state/playback';
 import LinearGradient from 'react-native-linear-gradient';
 import { useImageColorPallete } from '@/lib/hooks/useImageColorPallete';
 import { Image } from 'expo-image';
 import {
+  Skip,
   TogglePLay,
   TrackArtist,
   TrackName,
 } from '@/view/components/mediaPlayer/index.web';
 import { PressableWithHover } from '@/view/components/util/PressableWithHover';
+import { MiniWebPlayerLoading } from '@/view/components/util/MediaPlayerLoading';
 
 function InnerBottomBarWeb() {
   const { hasSession, currentAccount } = useSession();
@@ -123,27 +123,6 @@ function InnerBottomBarWeb() {
               return <>{Icon}</>;
             }}
           </NavItem>
-          <NavItem
-            routeName="Profile"
-            href={currentAccount ? `/profile/felipeCeballos` : '/'}
-          >
-            {({ isActive }) => {
-              const Icon = isActive ? (
-                <UserIconSolid
-                  color={colors.neutral200}
-                  size={27}
-                  style={[styles.ctrlIcon, styles.homeIcon]}
-                />
-              ) : (
-                <UserIcon
-                  color="rgba(179, 185, 196, 0.8)"
-                  style={[styles.ctrlIcon, styles.homeIcon]}
-                />
-              );
-
-              return <>{Icon}</>;
-            }}
-          </NavItem>
         </>
       )}
     </View>
@@ -164,7 +143,7 @@ export function BottomBarWeb() {
     <Animated.View style={[styles.bottomBar, styles.bottomBarWeb]}>
       {hasSession ? (
         <>
-          {currentRoute.name !== 'MyMusic' && <MiniWebPlayer />}
+          {currentRoute.name !== 'Home' && <MiniWebPlayer />}
           <InnerBottomBarWeb />
         </>
       ) : (
@@ -219,19 +198,7 @@ function MiniWebPlayer() {
   const { track } = useSpotify();
 
   if (!track.info.uri) {
-    return (
-      <View
-        style={{
-          maxWidth: 400,
-          width: '100%',
-          alignSelf: 'center',
-          borderTopRightRadius: 8,
-          borderTopLeftRadius: 8,
-          height: 86,
-          backgroundColor: 'rgba(255,255,255,0.11)',
-        }}
-      ></View>
-    );
+    return <MiniWebPlayerLoading />;
   }
 
   return (
@@ -260,12 +227,25 @@ function MiniWebPlayer() {
           />
         </View>
       </View>
-
-      <TogglePLay
-        btnSize={60}
-        iconSize={24}
-        color={colors.neutral300}
-      />
+      <View
+        style={{
+          flex: 1,
+          flexDirection: 'row',
+          justifyContent: 'flex-end',
+        }}
+      >
+        <TogglePLay
+          btnSize={60}
+          iconSize={24}
+          color={colors.neutral300}
+        />
+        <Skip
+          mode="forward"
+          btnSize={60}
+          iconSize={24}
+          color={colors.neutral300}
+        />
+      </View>
     </MiniWebPlayerContainer>
   );
 }
@@ -284,9 +264,7 @@ function MiniWebPlayerContainer({
     <PressableWithHover
       hoverStyle={{}}
       style={styles.miniWebPlayerBtn}
-      onPress={() =>
-        navigation.dispatch(StackActions.push('MyMusic'))
-      }
+      onPress={() => navigation.dispatch(StackActions.push('Home'))}
     >
       <LinearGradient
         colors={[colours[2], 'rgba(0,0,0,0.8)']}

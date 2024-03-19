@@ -10,19 +10,25 @@ import {
 } from 'react-native';
 import { Image } from 'expo-image';
 
-import { Search, X } from 'lucide-react-native';
+import { ArrowLeft, ListPlus, Search, X } from 'lucide-react-native';
 import { useSession } from '@/state/session';
-import { colors } from '@/lib/colors';
+import { colors, someColors, someColors1 } from '@/lib/colors';
 import { useWebMediaQueries } from '@/lib/hooks/useWebMediaQueries';
 import { isWeb } from '@/platform/detection';
 import { PressableWithHover } from '../components/util/PressableWithHover';
-import { useSpotify, useSpotifyApi } from '@/state/playback';
+import { track, useSpotify, useSpotifyApi } from '@/state/playback';
 import {
   useNavigation,
   StackActions,
 } from '@react-navigation/native';
 import { NavigationProp } from '@/lib/routes/types';
-import { convertMsOnM, getIDFromURI } from '@/lib/functions';
+import {
+  convertMsOnM,
+  generateRandomValueFromObj,
+  getIDFromURI,
+} from '@/lib/functions';
+import { genreSeed } from '@/lib/genreSeed';
+import LinearGradient from 'react-native-linear-gradient';
 
 type MusicContent = {
   uri: string;
@@ -161,6 +167,41 @@ export function SearchScreen() {
           isTabletOrDesktop && { paddingTop: 10 },
         ]}
       >
+        {showAutocompleteResults ? (
+          <PressableWithHover
+            onPress={() => {
+              setShowAutocompleteResults(false);
+              setQuery('');
+            }}
+            hoverStyle={{
+              backgroundColor: 'rgba( 232, 234, 246, 0.2)',
+            }}
+            style={{
+              width: 30,
+              height: 30,
+              borderRadius: 30,
+              marginRight: 6,
+              paddingBottom: 2,
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <ArrowLeft
+              size={18}
+              color={colors.neutral200}
+              strokeWidth={3}
+            />
+          </PressableWithHover>
+        ) : (
+          <View
+            style={{
+              width: 30,
+              height: 30,
+              marginRight: 6,
+              paddingBottom: 2,
+            }}
+          />
+        )}
         <View
           style={[
             styles.headerSearchContainer,
@@ -288,9 +329,8 @@ export function SearchScreen() {
             )}
           </>
         ) : (
-          <View
+          <ScrollView
             style={[
-              isWeb && { height: '100%' },
               {
                 maxWidth: 500,
                 width: '100%',
@@ -308,40 +348,112 @@ export function SearchScreen() {
                 flexWrap: 'wrap',
                 justifyContent: 'center',
                 gap: 16,
+                backgroundColor: colors.black,
+                marginTop: 30,
               }}
             >
-              {explores.map(({ name, id }) => (
-                <Pressable
-                  key={id}
-                  onPress={() => console.info('Click')}
-                  style={{
-                    width: 150,
-                    height: 100,
-                    backgroundColor: colors.lime400,
-                    paddingVertical: 8,
-                    paddingHorizontal: 12,
-                    borderRadius: 5,
-                  }}
-                >
-                  <Text
-                    style={{
-                      fontSize: 18,
-                      fontWeight: '700',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    {name}
-                  </Text>
-                </Pressable>
-              ))}
+              <ExploreMusic
+                setSearchResults={setSearchResults}
+                setIsFetching={setIsFetching}
+                setShowAutocompleteResults={
+                  setShowAutocompleteResults
+                }
+              />
             </View>
             <View style={{ height: 200 }} />
-          </View>
+          </ScrollView>
         )}
       </>
     </View>
   );
 }
+
+const ExploreMusic = React.memo(function ExploreMoreMusic({
+  setSearchResults,
+  setIsFetching,
+  setShowAutocompleteResults,
+}: {
+  setSearchResults: (arr: []) => void;
+  setIsFetching: (arg: boolean) => void;
+  setShowAutocompleteResults: (arg: boolean) => void;
+}) {
+  const { currentAccount, hasSession } = useSession();
+  const token = hasSession ? currentAccount?.accessJwt : '';
+
+  const handleRecommendations = async (genres: string) => {
+    scrollToTopWeb();
+    setIsFetching(true);
+    setShowAutocompleteResults(true);
+
+    const response = await fetch(
+      `https://api.spotify.com/v1/recommendations?seed_genres=${genres}`,
+      {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    console.info({ response });
+    if (response.status !== 200) return;
+
+    const tracks = await response.json();
+    setSearchResults(tracks.tracks);
+    setIsFetching(false);
+  };
+
+  return (
+    <>
+      {genreSeed.map((genre) => (
+        <Pressable
+          key={genre}
+          onPress={() => handleRecommendations(genre)}
+          style={{
+            width: 150,
+            height: 100,
+            //backgroundColor: generateRandomValueFromObj(someColors),
+            //backgroundColor: colors.blue800,
+
+            borderRadius: 5,
+            marginTop: -25,
+          }}
+        >
+          <LinearGradient
+            colors={[
+              generateRandomValueFromObj(someColors),
+              'rgba(0, 0, 0, 0.3)',
+            ]}
+            style={{
+              flex: 1,
+
+              borderRadius: 5,
+            }}
+          >
+            <View
+              style={{
+                flex: 1,
+                backgroundColor: 'rgba(0,0,0,0.2)',
+                paddingVertical: 8,
+                paddingHorizontal: 12,
+              }}
+            >
+              <Text
+                style={{
+                  fontSize: 15,
+                  fontWeight: '700',
+                  textTransform: 'uppercase',
+                }}
+              >
+                {genre}
+              </Text>
+            </View>
+          </LinearGradient>
+        </Pressable>
+      ))}
+    </>
+  );
+});
 
 function scrollToTopWeb() {
   if (isWeb) {
@@ -527,6 +639,39 @@ function SearchMusicCard({
       <Text style={{ color: 'white' }}>
         {convertMsOnM(duration_ms)}
       </Text>
+      <AddtoQueue uri={uri} device={device} />
+    </PressableWithHover>
+  );
+}
+
+function AddtoQueue({
+  uri,
+  device,
+}: {
+  uri: string;
+  device: string;
+}) {
+  const { addTotheQueue } = useSpotifyApi();
+
+  async function handleAddTotheQueue(uri: string, device: string) {
+    await addTotheQueue(uri, device);
+  }
+
+  return (
+    <PressableWithHover
+      onPress={() => handleAddTotheQueue(uri, device)}
+      hoverStyle={{
+        backgroundColor: 'rgba( 232, 234, 246, 0.2)',
+      }}
+      style={{
+        width: 40,
+        height: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
+        borderRadius: 40,
+      }}
+    >
+      <ListPlus size={18} color={colors.neutral400} />
     </PressableWithHover>
   );
 }

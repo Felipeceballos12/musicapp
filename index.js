@@ -1,5 +1,5 @@
 import 'react-native-gesture-handler'; // must be first
-//import { LogBox } from 'react-native';
+import { LogBox } from 'react-native';
 
 import { registerRootComponent } from 'expo';
 

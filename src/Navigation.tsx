@@ -44,14 +44,6 @@ const commonScreens = (Stack: typeof HomeTab) => {
         getComponent={() => NotFoundScreen}
         options={{ title: 'Not Found' }}
       />
-      <Stack.Screen
-        name="Profile"
-        getComponent={() => ProfileScreen}
-        options={({ route }: any) => ({
-          title: `@${route.params.name}`,
-          animation: 'none',
-        })}
-      />
     </>
   );
 };

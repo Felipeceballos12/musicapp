@@ -1,3 +1,5 @@
+import { someColors, someColors1 } from './colors';
+
 export function choose<U, T extends Record<string, U>>(
   value: keyof T,
   choices: T
@@ -28,4 +30,9 @@ export function changeRepeatMode(number: number) {
 
 export function getIDFromURI(str: string) {
   return str.slice(str.lastIndexOf(':') + 1);
+}
+
+export function generateRandomValueFromObj(obj: typeof someColors) {
+  const values = Object.values(obj);
+  return values[Math.floor(Math.random() * values.length)];
 }

@@ -20,24 +20,7 @@ import { Image } from 'expo-image';
 import { useKeyDown } from '@/lib/hooks/useKeyDown';
 
 export function WebPlayBack() {
-  const { isReady, track } = useSpotify();
-
-  if (!isReady) {
-    return (
-      <View style={styles.container}>
-        <View
-          style={[
-            styles.mainWrapper,
-            { backgroundColor: colors.black },
-          ]}
-        >
-          <Text style={{ color: colors.neutral200 }}>
-            Loading....
-          </Text>
-        </View>
-      </View>
-    );
-  }
+  const { track } = useSpotify();
 
   return (
     <View style={styles.container}>
@@ -129,6 +112,7 @@ function Seekbar() {
 
 function WebPlayerContent({ children }: { children: ReactNode }) {
   const { track } = useSpotify();
+
   return (
     <>
       <Image
@@ -220,6 +204,7 @@ export function TrackArtist({
           fontSize: fontSize,
           fontWeight: fontWeight,
         }}
+        numberOfLines={1}
       >
         {track.info.artists[0].name}
       </Text>
@@ -270,47 +255,12 @@ function PlaybackControls() {
           size={24}
         />
       </Pressable>
-      <PressableWithHover
-        hoverStyle={{}}
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: 24,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-        onPress={() => {
-          player?.previousTrack().then(() => console.log('Back'));
-        }}
-      >
-        <SkipBack
-          fill="rgba(179, 185, 196, 0.8)"
-          color="rgba(179, 185, 196, 0.8)"
-          size={28}
-        />
-      </PressableWithHover>
+
+      <Skip mode="back" />
 
       <TogglePLay />
 
-      <PressableWithHover
-        style={{
-          width: 44,
-          height: 44,
-          borderRadius: 24,
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-        hoverStyle={{}}
-        onPress={() =>
-          player?.nextTrack().then(() => console.log('Next'))
-        }
-      >
-        <SkipForward
-          fill="rgba(179, 185, 196, 0.9)"
-          color="rgba(179, 185, 196, 0.8)"
-          size={28}
-        />
-      </PressableWithHover>
+      <Skip mode="forward" />
 
       <Pressable
         onPress={() => handleRepeatMode(track.repeatMode, device)}
@@ -371,6 +321,50 @@ export function TogglePLay({
       ) : (
         <Pause fill={color} color={color} size={iconSize} />
       )}
+    </PressableWithHover>
+  );
+}
+
+type SkipProps = {
+  mode: 'forward' | 'back';
+  iconSize?: number;
+  btnSize?: number;
+  color?: string;
+};
+
+export function Skip({
+  mode,
+  iconSize = 28,
+  btnSize = 44,
+  color = 'rgba(179, 185, 196, 0.8)',
+}: SkipProps) {
+  const { player } = useSpotify();
+
+  const Icon = mode === 'forward' ? SkipForward : SkipBack;
+
+  async function handleSkipPlay() {
+    if (mode === 'forward') {
+      await player?.nextTrack();
+      return;
+    }
+
+    await player?.previousTrack();
+    return;
+  }
+
+  return (
+    <PressableWithHover
+      style={{
+        width: btnSize,
+        height: btnSize,
+        borderRadius: 24,
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+      hoverStyle={{}}
+      onPress={handleSkipPlay}
+    >
+      <Icon fill={color} color={color} size={iconSize} />
     </PressableWithHover>
   );
 }
